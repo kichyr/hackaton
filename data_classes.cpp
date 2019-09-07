@@ -86,3 +86,23 @@ void read_data(vector<order>& orders, vector<courier>& couriers, vector<depot>& 
         depots.push_back(dep);
     }
 }
+
+json make_json(vector<courier>& couriers) {
+    json output = json::array();
+    for (size_t i = 0; i < couriers.size(); i++) {
+        for (size_t j = 0; j < couriers[i].task_list.size(); j++) {
+            json event;
+            event["order_id"] = couriers[i].task_list[j].order_id;
+            event["point_id"] = couriers[i].task_list[j].point_id;
+            event["courier_id"] = couriers[i].courier_id;
+            switch(couriers[i].task_list[j].action) {
+                case Action::pickup:
+                    event["action"] = "pickup";
+                case Action::dropoff:
+                    event["action"] = "dropoff";
+            }
+            output.push_back(event);
+        }
+    }
+    return output;
+}
