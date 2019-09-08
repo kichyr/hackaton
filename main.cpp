@@ -1,9 +1,15 @@
-#include<data_classes.cpp>
+#include"dostavista_alg.cpp"
 #include<vector>
 using namespace std;
 
+
+ostream& operator<< (ostream& os, const order& ord) {
+    return os << "{" << ord.order_id << "}";
+}
+
 int main() {
-    vector<order> orders;
-    vector<courier> couriers;
-    read_data(orders, couriers);
+    Dostavister D;
+    std::ofstream file("output.json");
+    file << make_json(D.couriers);
+    cout << D.orders;
 }

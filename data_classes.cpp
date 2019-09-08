@@ -7,6 +7,21 @@
 using json = nlohmann::json;
 using namespace std;
 
+
+// C++ template to print vector container elements 
+template <typename T> 
+ostream& operator<<(ostream& os, const vector<T>& v) 
+{ 
+    os << "["; 
+    for (int i = 0; i < v.size(); ++i) { 
+        os << v[i]; 
+        if (i != v.size() - 1) 
+            os << ", "; 
+    } 
+    os << "]\n"; 
+    return os; 
+} 
+
 typedef pair<int, int> Point;
 
 //метрика Манхэттена
@@ -16,7 +31,8 @@ int ro(Point p1, Point p2) {
 enum Action {
     pickup,
     dropoff,
-    wait
+    die,
+    burn
 };
 
 typedef struct task {
@@ -46,7 +62,10 @@ public:
     int payment;
     //
     //Point current_pos;  //!!!!!!!!!!!!
-    bool availability = true;
+    Point curr_location;
+    int curr_location_id;
+    bool closed = false;
+    int time_of_avaliability;
 };
 
 
