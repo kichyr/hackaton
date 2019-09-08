@@ -2,6 +2,7 @@
 #include<utility>
 #include<vector>
 #include<fstream>
+#include<map>
 #include "json.hpp"
 using json = nlohmann::json;
 using namespace std;
@@ -43,16 +44,20 @@ public:
     int dropoff_from;
     int dropoff_to;
     int payment;
+    //
+    //Point current_pos;  //!!!!!!!!!!!!
+    bool availability = true;
 };
 
 
 class depot {
 public:
     int point_id;
-    pair<int, int> location;
+    Point location;
+    vector<int> orders_here; //номера индексов
 };
 
-void read_data(vector<order>& orders, vector<courier>& couriers, vector<depot>& depots){
+void read_data(vector<order>& orders, vector<courier>& couriers, map<int, depot>& depots){
     std::ifstream ifs("input.json");
     json j = json::parse(ifs);
     for (size_t i = 0; i < j["orders"].size(); i++) {
@@ -83,6 +88,26 @@ void read_data(vector<order>& orders, vector<courier>& couriers, vector<depot>& 
         dep.point_id = j["depots"][i]["point_id"];
         dep.location.first = j["depots"][i]["location_x"];
         dep.location.second = j["depots"][i]["location_y"];
-        depots.push_back(dep);
+        depots[dep.point_id] = dep;
     }
+}
+
+json make_json(vector<courier>& couriers) {
+    json output = json::array();
+    for (size_t i = 0; i < couriers.size(); i++) {
+        for (size_t j = 0; j < couriers[i].task_list.size(); j++) {
+            json event;
+            event["order_id"] = couriers[i].task_list[j].order_id;
+            event["point_id"] = couriers[i].task_list[j].point_id;
+            event["courier_id"] = couriers[i].courier_id;
+            if (couriers[i].task_list[j].action == pickup) {
+                event["action"] = "pickup";
+            }
+            else if (couriers[i].task_list[j].action == dropoff) {
+                event["action"] = "dropoff";
+            }
+            output.push_back(event);
+        }
+    }
+    return output;
 }
