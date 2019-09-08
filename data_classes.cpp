@@ -119,13 +119,14 @@ json make_json(vector<courier>& couriers) {
             event["order_id"] = couriers[i].task_list[j].order_id;
             event["point_id"] = couriers[i].task_list[j].point_id;
             event["courier_id"] = couriers[i].courier_id;
-            if (couriers[i].task_list[j].action == pickup) {
+            if (couriers[i].task_list[j].action == Action::pickup) {
                 event["action"] = "pickup";
+                output.push_back(event);
             }
-            else if (couriers[i].task_list[j].action == dropoff) {
+            else if (couriers[i].task_list[j].action == Action::dropoff) {
                 event["action"] = "dropoff";
+                output.push_back(event);
             }
-            output.push_back(event);
         }
     }
     return output;

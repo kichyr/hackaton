@@ -5,8 +5,8 @@
 #include<tuple>
 
 #define START_TIME 360
-#define END_TIME 360
-#define INFTY 1440
+#define END_TIME 1440
+#define INFTY 9999
 
 
 class Dostavister {
@@ -35,8 +35,8 @@ void Emulation(Dostavister& d) {
     //составляем решение о дальнейших действиях
     d.make_decision( *min_element(d.couriers.begin(), d.couriers.end(), 
     [](const courier & a, const courier & b) {
-        if(a.task_list.back().time_end > b.task_list.back().time_end)               //??????? хуй знает в какую сторону знак ставить
-            return true;                              
+        if(a.task_list.back().time_end < b.task_list.back().time_end)               //??????? хуй знает в какую сторону знак ставить
+            return true;
         else return false;
     }
     ));
@@ -117,6 +117,8 @@ auto Dostavister::efficiency(courier& c, order& ord) {
         int t_to_dest = ro_to_dest + 10;
         int t_to_depot = ro_to_depot + 10;
 
+        if(ro_to_dest == 0) 
+            ro_to_dest = 100;
         int t_to_source = ro(c.curr_location, ord.curr_location) + 10;
         
         int wait_t_source;
@@ -135,6 +137,12 @@ auto Dostavister::efficiency(courier& c, order& ord) {
         if(ord.dropoff_to - (time + t_to_source + t_to_dest + wait_t_source) < 0)
                 wait_t_dest = INFTY;
 
+
+        if(ord.pickup_location == c.curr_location) {
+            t_to_source = 0;
+            wait_t_source = 0;
+            t_to_source = 0;
+        }
 
         double eff_to_dest = double(ro_to_dest) / (t_to_source + wait_t_source + t_to_dest + wait_t_dest);
         // (ro_to_depot + 10) - что-то вроде нижней оценки на среднее время ПОИСКА
@@ -159,26 +167,27 @@ auto Dostavister::efficiency(courier& c, order& ord) {
             next_point_of_order = dep.location;
             time_task2 += t_to_depot;
         }
-        return tie(std::max(eff_to_dest, eff_to_depot), next_point_of_order, next_hop_point, next_point_of_order_id, next_hop_id, 
+        return make_tuple(std::max(eff_to_dest, eff_to_depot), next_point_of_order, next_hop_point, next_point_of_order_id, next_hop_id, 
             time_task1, time_task2);
 }
 
 void Dostavister::searching_optimal_new_order(courier& c) {
-    Point next_point_of_order, next_hop_point;
+    Point next_point_of_order = make_pair(0,0), next_hop_point;
     int next_point_of_order_id, next_hop_id;
-    int most_eff_order_index = -1, max_eff = -INFTY, temp_eff;
+    int most_eff_order_index = -1;
     int time_task1, time_task2;
+    double temp_eff, max_eff = - INFTY;
     for(int i = 0; i < orders.size(); i++) {
         if(!orders[i].closed) {
             tie(temp_eff, next_point_of_order, next_hop_point, next_point_of_order_id, next_hop_id, time_task1, time_task2) = 
             efficiency(c, orders[i]);
+            cout << time_task1 << " " << time_task2;
             if(temp_eff > max_eff && time + time_task1 + time_task2 < END_TIME) {
                 max_eff = temp_eff;
                 most_eff_order_index = i;
             }
         }
     }
-
     if(most_eff_order_index == -1) {
         c.task_list.push_back(task{
         Action::die,
@@ -190,7 +199,7 @@ void Dostavister::searching_optimal_new_order(courier& c) {
         profit -= (time - START_TIME) * 2;
         return;
     }
-
+    cout << "ok";
     c.task_list.push_back(task{
         Action::pickup,
         orders[most_eff_order_index].order_id,
