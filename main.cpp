@@ -12,4 +12,5 @@ int main() {
     std::ofstream file("output.json");
     file << make_json(D.couriers);
     cout << D.orders;
+    cout << D.profit;
 }

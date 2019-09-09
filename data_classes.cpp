@@ -77,7 +77,7 @@ public:
 };
 
 void read_data(vector<order>& orders, vector<courier>& couriers, map<int, depot>& depots){
-    std::ifstream ifs("input.json");
+    std::ifstream ifs("hard_input.json");
     json j = json::parse(ifs);
     for (size_t i = 0; i < j["orders"].size(); i++) {
         order ord;

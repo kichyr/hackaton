@@ -27,7 +27,7 @@ public:
     depot& closest_depot(Point p);
     int closest_dest(Point p);
     void searching_optimal_new_order(courier& c);
-    auto efficiency(courier& c, order& ord);
+    auto efficiency(courier& c, const order& ord);
 };
 
 void Emulation(Dostavister& d) {
@@ -73,7 +73,6 @@ void Dostavister::make_start_state() {
                                         START_TIME,
                                         START_TIME
                                         });
-        couriers[i].curr_location = orders[rand() % orders.size()].curr_location;
     }
         
 }
@@ -90,11 +89,12 @@ void Dostavister::make_decision(courier& c) {
     if(c.task_list.back().action == Action::die)
         return;
     //----------------кладем заказ-------------------
+    fflush((FILE*)0);
     time = c.task_list.back().time_end;
     if(c.task_list.back().action == Action::dropoff) {
         order* taken_order = get_ptr_order_by_order_id[c.task_list.back().order_id];
         //доставили клиенту
-        if(taken_order->curr_location == taken_order->dropoff_location) {
+        if(taken_order->curr_location_id == taken_order->dropoff_point_id) {
             profit += taken_order->payment;
             taken_order->closed = true;
         }
@@ -104,7 +104,7 @@ void Dostavister::make_decision(courier& c) {
     }
 }
 
-auto Dostavister::efficiency(courier& c, order& ord) {
+auto Dostavister::efficiency(courier& c, const order& ord) {
         //если получилось взять заказ с точки ищем наилучшее место - 
         //либо dest либо ближайший к dest depot
 
@@ -148,6 +148,9 @@ auto Dostavister::efficiency(courier& c, order& ord) {
         // (ro_to_depot + 10) - что-то вроде нижней оценки на среднее время ПОИСКА
         double eff_to_depot = double(ro_to_dest - rest) / (t_to_source + wait_t_source + t_to_depot + (ro_to_depot + 10));
 
+        if(ord.curr_location_id != ord.dropoff_point_id && ord.curr_location_id != ord.pickup_point_id && time > 1000) {
+            eff_to_dest *= 10;
+        }
         Point next_point_of_order, next_hop_point;
         int next_point_of_order_id, next_hop_id;
         
@@ -167,6 +170,7 @@ auto Dostavister::efficiency(courier& c, order& ord) {
             next_point_of_order = dep.location;
             time_task2 += t_to_depot;
         }
+        
         return make_tuple(std::max(eff_to_dest, eff_to_depot), next_point_of_order, next_hop_point, next_point_of_order_id, next_hop_id, 
             time_task1, time_task2);
 }
@@ -176,13 +180,22 @@ void Dostavister::searching_optimal_new_order(courier& c) {
     int next_point_of_order_id, next_hop_id;
     int most_eff_order_index = -1;
     int time_task1, time_task2;
+
+    Point next_point_of_order1 = make_pair(0,0), next_hop_point1;
+    int next_point_of_order_id1, next_hop_id1;
+    int most_eff_order_index1 = -1;
+    int time_task11, time_task21;
+
+
+    int temp;
     double temp_eff, max_eff = - INFTY;
     for(int i = 0; i < orders.size(); i++) {
         if(!orders[i].closed) {
-            tie(temp_eff, next_point_of_order, next_hop_point, next_point_of_order_id, next_hop_id, time_task1, time_task2) = 
-            efficiency(c, orders[i]);
-            cout << time_task1 << " " << time_task2;
+            tie(temp_eff, next_point_of_order1, next_hop_point1, next_point_of_order_id1, next_hop_id1, time_task11, time_task21) = 
+                efficiency(c, orders[i]);
             if(temp_eff > max_eff && time + time_task1 + time_task2 < END_TIME) {
+                tie(temp_eff, next_point_of_order, next_hop_point, next_point_of_order_id, next_hop_id, time_task1, time_task2) = 
+                efficiency(c, orders[i]);
                 max_eff = temp_eff;
                 most_eff_order_index = i;
             }
@@ -199,7 +212,6 @@ void Dostavister::searching_optimal_new_order(courier& c) {
         profit -= (time - START_TIME) * 2;
         return;
     }
-    cout << "ok";
     c.task_list.push_back(task{
         Action::pickup,
         orders[most_eff_order_index].order_id,
@@ -216,10 +228,16 @@ void Dostavister::searching_optimal_new_order(courier& c) {
         time + time_task1 + time_task2,
     });
 
+    
+
     orders[most_eff_order_index].time_of_avaliability = time + time_task1 + time_task2;
     orders[most_eff_order_index].curr_location = next_point_of_order;
     orders[most_eff_order_index].curr_location_id = next_point_of_order_id;
     c.curr_location = next_point_of_order;
+
+    if(orders[most_eff_order_index].curr_location_id == orders[most_eff_order_index].dropoff_point_id) {
+        orders[most_eff_order_index].closed = true;
+    }
 }
 
 
